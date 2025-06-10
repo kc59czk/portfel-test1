@@ -87,9 +87,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-       // Wykres wartości portfela w czasie
     const historyData = {{ history|tojson }};
-    const historyDates = historyData.map(item => new Date(item.date).toLocaleDateString());
+    const historyDates = historyData.map(item => item.date);
     const historyValues = historyData.map(item => item.total_value);
     const historyInvested = historyData.map(item => item.total_invested);
     
@@ -123,7 +122,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     beginAtZero: false,
                     ticks: {
                         callback: function(value) {
-                            return value.toLocaleString('pl-PL', {maximumFractionDigits: 0}) + ' PLN';
+                            return value.toLocaleString('pl-PL') + ' PLN';
                         }
                     }
                 }
@@ -139,6 +138,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
+  
 });
 </script>
 {% endblock %}
