@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h1 class="mb-4">Twój Portfel Kryptowalut</h1>
+
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card text-white bg-primary mb-3">
+                <div class="card-header">Całkowita wartość</div>
+                <div class="card-body">
+                    <h5 class="card-title">{{ "%.2f"|format(total_value) }} USD</h5>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-white bg-secondary mb-3">
+                <div class="card-header">Zainwestowano</div>
+                <div class="card-body">
+                    <h5 class="card-title">{{ "%.2f"|format(total_invested) }} USD</h5>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-white bg-{{ 'success' if total_profit_loss >= 0 else 'danger' }} mb-3">
+                <div class="card-header">Zysk/Strata</div>
+                <div class="card-body">
+                <h5 class="card-title">
+    {{ "%+.2f PLN (%.2f%%)"|format(total_profit_loss, (total_profit_loss / total_invested * 100 if total_invested != 0 else 0)) }}
+</h5>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h2 class="mb-3">Twoje Aktywa</h2>
+    <div class="table-responsive mb-5">
+        <table class="table table-striped">
+        <!-- Zmieniamy nagłówki tabeli -->
+<thead>
+    <tr>
+        <th>Spółka</th>
+        <th>Symbol</th>
+        <th>Ilość</th>
+        <th>Aktualna cena</th>
+        <th>Aktualna wartość</th>
+        <th>Zainwestowano</th>
+        <th>Zysk/Strata</th>
+    </tr>
+</thead>
+    <tbody>
+    {% for stock, data in portfolio.items() if data['amount'] > 0 %}
+    <tr>
+        <td>{{ data['name'] }}</td>
+        <td>{{ stock }}</td>
+        <td>{{ "%.2f"|format(data['amount']) }}</td>
+        <td>{{ "%.2f"|format(data['current_price']) if data['current_price'] else 'Brak danych' }} PLN</td>
+        <td>{{ "%.2f"|format(data['current_value']) if data['current_value'] else 'Brak danych' }} PLN</td>
+        <td>{{ "%.2f"|format(data['invested']) }} PLN</td>
+<td class="{{ 'text-success' if data['profit_loss'] is not none and data['profit_loss'] >= 0 else 'text-danger' }}">
+    {{ "%.2f"|format(data['profit_loss']) if data['profit_loss'] is not none else 'Brak danych' }} PLN
+    ({{ "%.2f"|format((data['profit_loss'] / data['invested'] * 100) if data['invested'] != 0 and data['profit_loss'] is not none else 0) }}%)
+</td>
+    </tr>
+    {% endfor %}
+</tbody>
+</table>
+    </div>
+
+    <h2 class="mb-3">Historia Transakcji</h2>
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Data</th>
+                    <th>Typ</th>
+                    <th>Ticker</th>
+                    <th>Ilość</th>
+                    <th>Cena za jednostkę</th>
+                    <th>Wartość</th>
+                    <th>Akcje</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for tx in transactions|sort(attribute='transaction_date', reverse=True) %}
+                <tr>
+                    <td>{{ tx.transaction_date.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td><span class="badge bg-{{ 'success' if tx.transaction_type == 'buy' else 'danger' }}">{{ 'Kupno' if tx.transaction_type == 'buy' else 'Sprzedaż' }}</span></td>
+                    <td>{{ tx.stock_name }}</td>
+                    <td>{{ "%.0f"|format(tx.amount) }}</td>
+                    <td>{{ "%.2f"|format(tx.price_per_unit) }} PLN</td>
+                    <td>{{ "%.2f"|format(tx.amount * tx.price_per_unit) }} PLN</td>
+                    <td>
+                        <a href="{{ url_for('delete_transaction', id=tx.id) }}" class="btn btn-sm btn-danger" onclick="return confirm('Czy na pewno chcesz usunąć tę transakcję?')">Usuń</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

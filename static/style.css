@@ -1,0 +1,36 @@
+body {
+    background-color: #f8f9fa;
+}
+
+.card {
+    box-shadow: 0 0.15rem 1.75rem 0 rgba(33, 40, 50, 0.15);
+}
+
+.card-header {
+    font-weight: 500;
+}
+
+.table-responsive {
+    box-shadow: 0 0.15rem 1.75rem 0 rgba(33, 40, 50, 0.1);
+}
+
+.table {
+    margin-bottom: 0;
+}
+
+.table th {
+    border-top: none;
+}
+
+.badge {
+    font-size: 0.85em;
+    padding: 0.35em 0.65em;
+}
+
+.alert {
+    margin-top: 1rem;
+}
+
+.navbar {
+    box-shadow: 0 0.15rem 1.75rem 0 rgba(33, 40, 50, 0.15);
+}

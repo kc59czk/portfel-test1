@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h1 class="mb-4">Dodaj Nową Transakcję</h1>
+
+    <div class="card">
+        <div class="card-body">
+            <form method="POST">
+                <div class="mb-3">
+                    <label for="stock_symbol" class="form-label">Symbol spółki (np. CDR, PZU, PKO)</label>
+                    <input type="text" class="form-control" id="stock_symbol" name="stock_symbol" required>
+                </div>
+                <div class="mb-3">
+                    <label for="stock_name" class="form-label">Nazwa spółki (opcjonalnie)</label>
+                    <input type="text" class="form-control" id="stock_name" name="stock_name">
+                </div>
+                <div class="mb-3">
+                    <label for="amount" class="form-label">Ilość</label>
+                    <input type="number" step="0.01" class="form-control" id="amount" name="amount" required>
+                </div>
+                <div class="mb-3">
+                    <label for="price_per_unit" class="form-label">Cena za akcję (PLN)</label>
+                    <input type="number" step="0.01" class="form-control" id="price_per_unit" name="price_per_unit" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Typ transakcji</label>
+                    <div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="transaction_type" id="buy" value="buy" checked>
+                            <label class="form-check-label" for="buy">Kupno</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="transaction_type" id="sell" value="sell">
+                            <label class="form-check-label" for="sell">Sprzedaż</label>
+                        </div>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary">Dodaj Transakcję</button>
+                <a href="{{ url_for('index') }}" class="btn btn-secondary">Anuluj</a>
+            </form>
+        </div>
+    </div>
+{% endblock %}

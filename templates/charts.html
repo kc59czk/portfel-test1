@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Rozkład portfela</h5>
+                <canvas id="portfolioChart"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Zysk/Strata</h5>
+                <canvas id="profitChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Dane przekazane z Flask
+    const portfolioData = {{ portfolio|tojson }};
+    
+    // Przygotowanie danych dla wykresów
+    const labels = Object.keys(portfolioData).filter(symbol => portfolioData[symbol].amount > 0);
+    const values = labels.map(symbol => portfolioData[symbol].current_value || 0);
+    const profits = labels.map(symbol => portfolioData[symbol].profit_loss || 0);
+    const colors = [
+        '#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', 
+        '#e74a3b', '#858796', '#5a5c69', '#3a3b45'
+    ];
+
+    // Wykres rozkładu portfela
+    new Chart(document.getElementById('portfolioChart'), {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: values,
+                backgroundColor: colors,
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'right'
+                }
+            }
+        }
+    });
+
+    // Wykres zysków/strat
+    new Chart(document.getElementById('profitChart'), {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Zysk/Strata (PLN)',
+                data: profits,
+                backgroundColor: profits.map(p => p >= 0 ? '#1cc88a' : '#e74a3b'),
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: false
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}
