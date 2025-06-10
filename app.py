@@ -190,10 +190,20 @@ def charts():
               portfolio[stock]['profit_loss'] = None
     
     total_profit_loss = total_value - total_invested if total_invested > 0 else 0
-    history = PortfolioHistory.query.order_by(PortfolioHistory.date).all()
+    history_records = PortfolioHistory.query.order_by(PortfolioHistory.date).all()
+ 
+    history = []
+    for record in history_records:
+        history.append({
+            "date": record.date.strftime("%Y-%m-%d %H:%M"),
+            "total_value": record.total_value,
+            "total_invested": record.total_invested
+        })
+
     return render_template('charts.html', 
                           portfolio=portfolio,
                           history=history)
+
 #    return render_template('charts.html', portfolio=portfolio)
 
 @app.route('/add_transaction', methods=['GET', 'POST'])
