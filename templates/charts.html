@@ -2,6 +2,16 @@
 
 {% block content %}
 <div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Wartość portfela w czasie</h5>
+                <canvas id="historyChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="row mt-4">
     <div class="col-md-6">
         <div class="card">
             <div class="card-body">
@@ -72,6 +82,59 @@ document.addEventListener('DOMContentLoaded', function() {
             scales: {
                 y: {
                     beginAtZero: false
+                }
+            }
+        }
+    });
+
+       // Wykres wartości portfela w czasie
+    const historyData = {{ history|tojson }};
+    const historyDates = historyData.map(item => new Date(item.date).toLocaleDateString());
+    const historyValues = historyData.map(item => item.total_value);
+    const historyInvested = historyData.map(item => item.total_invested);
+    
+    new Chart(document.getElementById('historyChart'), {
+        type: 'line',
+        data: {
+            labels: historyDates,
+            datasets: [
+                {
+                    label: 'Wartość portfela',
+                    data: historyValues,
+                    borderColor: '#4e73df',
+                    backgroundColor: 'rgba(78, 115, 223, 0.1)',
+                    fill: true,
+                    tension: 0.3
+                },
+                {
+                    label: 'Zainwestowany kapitał',
+                    data: historyInvested,
+                    borderColor: '#1cc88a',
+                    backgroundColor: 'rgba(28, 200, 138, 0.1)',
+                    fill: true,
+                    tension: 0.3
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: false,
+                    ticks: {
+                        callback: function(value) {
+                            return value.toLocaleString('pl-PL', {maximumFractionDigits: 0}) + ' PLN';
+                        }
+                    }
+                }
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.dataset.label + ': ' + context.parsed.y.toLocaleString('pl-PL', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' PLN';
+                        }
+                    }
                 }
             }
         }

@@ -59,6 +59,52 @@ def get_stock_name(symbol):
     }
     return stock_names.get(symbol.upper(), symbol.upper())
 
+# Dodaj nowy model
+class PortfolioHistory(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    date = db.Column(db.DateTime, default=datetime.utcnow)
+    total_value = db.Column(db.Float)
+    total_invested = db.Column(db.Float)
+
+# Funkcja do zapisywania historii portfela
+def save_portfolio_history():
+    transactions = Transaction.query.all()
+    portfolio = {}
+    total_value = 0.0
+    total_invested = 0.0
+    
+    # Oblicz aktualną wartość portfela
+    for tx in transactions:
+        if tx.stock_symbol not in portfolio:
+            portfolio[tx.stock_symbol] = {
+                'amount': 0,
+                'invested': 0
+            }
+        
+        if tx.transaction_type == 'buy':
+            portfolio[tx.stock_symbol]['amount'] += tx.amount
+            portfolio[tx.stock_symbol]['invested'] += tx.amount * tx.price_per_unit
+        else:
+            portfolio[tx.stock_symbol]['amount'] -= tx.amount
+            portfolio[tx.stock_symbol]['invested'] -= tx.amount * tx.price_per_unit
+    
+    # Oblicz całkowitą wartość i zainwestowany kapitał
+    for stock in portfolio:
+        if portfolio[stock]['amount'] > 0:
+            current_price = get_stock_price(stock)
+            if current_price:
+                current_value = portfolio[stock]['amount'] * current_price
+                total_value += current_value
+                total_invested += portfolio[stock]['invested']
+    
+    # Zapisz do historii
+    history = PortfolioHistory(
+        total_value=total_value,
+        total_invested=total_invested
+    )
+    db.session.add(history)
+    db.session.commit()
+
 @app.route('/')
 def index():
     transactions = Transaction.query.all()
@@ -144,8 +190,11 @@ def charts():
               portfolio[stock]['profit_loss'] = None
     
     total_profit_loss = total_value - total_invested if total_invested > 0 else 0
- 
-    return render_template('charts.html', portfolio=portfolio)
+    history = PortfolioHistory.query.order_by(PortfolioHistory.date).all()
+    return render_template('charts.html', 
+                          portfolio=portfolio,
+                          history=history)
+#    return render_template('charts.html', portfolio=portfolio)
 
 @app.route('/add_transaction', methods=['GET', 'POST'])
 def add_transaction():
@@ -188,7 +237,8 @@ def add_transaction():
         
         db.session.add(new_transaction)
         db.session.commit()
-        
+        # Zapisz historię portfela po dodaniu transakcji        
+        save_portfolio_history() 
         flash('Transakcja dodana pomyślnie!', 'success')
         return redirect(url_for('index'))
     
@@ -199,6 +249,7 @@ def delete_transaction(id):
     transaction = Transaction.query.get_or_404(id)
     db.session.delete(transaction)
     db.session.commit()
+    save_portfolio_history() 
     flash('Transakcja usunięta pomyślnie!', 'success')
     return redirect(url_for('index'))
 
