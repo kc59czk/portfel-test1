@@ -115,8 +115,6 @@ def save_portfolio_history():
 @app.route('/')
 def index():
     transactions = Transaction.query.all()
-    
-    # Obliczanie statystyk portfela
     portfolio = {}
     total_value = 0.0  # Zainicjuj jako float
     total_invested = 0.0  # Zainicjuj jako float
@@ -126,6 +124,8 @@ def index():
             portfolio[tx.stock_symbol] = {
                 'amount': 0,
                 'invested': 0,
+                'total_shares_bought': 0,  # Nowe pole
+                'total_cost': 0,          # Nowe pole
                 'current_price': get_stock_price(tx.stock_symbol),
                 'name': tx.stock_name or get_stock_name(tx.stock_symbol)
             }
@@ -133,6 +133,8 @@ def index():
         if tx.transaction_type == 'buy':
             portfolio[tx.stock_symbol]['amount'] += tx.amount
             portfolio[tx.stock_symbol]['invested'] += tx.amount * tx.price_per_unit
+            portfolio[tx.stock_symbol]['total_shares_bought'] += tx.amount  # Suma akcji kupionych
+            portfolio[tx.stock_symbol]['total_cost'] += tx.amount * tx.price_per_unit  # Suma kosztów
         else:
             portfolio[tx.stock_symbol]['amount'] -= tx.amount
             portfolio[tx.stock_symbol]['invested'] -= tx.amount * tx.price_per_unit
@@ -141,6 +143,12 @@ def index():
     for stock in portfolio:
         # Dodaj tylko aktywa, które faktycznie posiadasz (amount > 0)
         if portfolio[stock]['amount'] > 0:
+                        # Oblicz średnią cenę zakupu
+            if portfolio[stock]['total_shares_bought'] > 0:
+               portfolio[stock]['avg_buy_price'] = portfolio[stock]['total_cost'] / portfolio[stock]['total_shares_bought']
+            else:
+                portfolio[stock]['avg_buy_price'] = 0
+            
             if portfolio[stock]['current_price']:
                 current_value = portfolio[stock]['amount'] * portfolio[stock]['current_price']
                 portfolio[stock]['current_value'] = current_value
@@ -148,6 +156,7 @@ def index():
                 total_value += current_value
                 total_invested += portfolio[stock]['invested']
             else:
+                portfolio[stock]['avg_buy_price'] = 0
                 portfolio[stock]['current_value'] = None
                 portfolio[stock]['profit_loss'] = None
     

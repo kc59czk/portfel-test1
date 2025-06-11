@@ -41,6 +41,7 @@
         <th>Spółka</th>
         <th>Symbol</th>
         <th>Ilość</th>
+        <th>Średnia cena zakupu</th>  
         <th>Aktualna cena</th>
         <th>Aktualna wartość</th>
         <th>Zainwestowano</th>
@@ -53,6 +54,15 @@
         <td>{{ data['name'] }}</td>
         <td>{{ stock }}</td>
         <td>{{ "%.2f"|format(data['amount']) }}</td>
+        <td>{{ "%.2f"|format(data['avg_buy_price']) }} PLN</td> 
+            {% if data['current_price'] %}
+        <div class="progress mt-1" style="height: 5px;">
+            <div class="progress-bar bg-{{ 'success' if data['current_price'] >= data['avg_buy_price'] else 'danger' }}" 
+                 style="width: {{ [100, (data['current_price'] / data['avg_buy_price'] * 100)|min }}%" 
+                 title="Aktualna cena: {{ '%.2f'|format(data['current_price']) }} PLN">
+            </div>
+        </div>
+            {% endif %}
         <td>{{ "%.2f"|format(data['current_price']) if data['current_price'] else 'Brak danych' }} PLN</td>
         <td>{{ "%.2f"|format(data['current_value']) if data['current_value'] else 'Brak danych' }} PLN</td>
         <td>{{ "%.2f"|format(data['invested']) }} PLN</td>
