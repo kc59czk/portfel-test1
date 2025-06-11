@@ -256,7 +256,7 @@ def add_transaction():
             stock_name=stock_name,
             amount=amount,
             price_per_unit=price_per_unit,
-            transaction_type=transaction_type
+            transaction_type=transaction_type,
             transaction_date=transaction_date  # Użyj wybranej daty
         )
         
