@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime
+from datetime import datetime,timezone
 import requests
 import re
 
@@ -16,7 +16,7 @@ class Transaction(db.Model):
     stock_name = db.Column(db.String(100))  # nazwa spółki
     amount = db.Column(db.Float, nullable=False)  # liczba akcji
     price_per_unit = db.Column(db.Float, nullable=False)  # cena za akcję w PLN
-    transaction_date = db.Column(db.DateTime, default=datetime.utcnow)
+    transaction_date = db.Column(db.DateTime, default=datetime.now(timezone.utc))  # data transakcji
     transaction_type = db.Column(db.String(10), nullable=False)  # 'buy' or 'sell'
 
 def get_stock_price(symbol):
@@ -62,7 +62,7 @@ def get_stock_name(symbol):
 # Dodaj nowy model
 class PortfolioHistory(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    date = db.Column(db.DateTime, default=datetime.utcnow)
+    date = db.Column(db.DateTime, default=datetime.now(timezone.utc))
     total_value = db.Column(db.Float)
     total_invested = db.Column(db.Float)
 
@@ -225,9 +225,11 @@ def add_transaction():
                 transaction_date = datetime.strptime(transaction_date_str, '%Y-%m-%dT%H:%M')
             except ValueError:
                 flash('Nieprawidłowy format daty. Użyj bieżącej daty.', 'warning')
-                transaction_date = datetime.utcnow()
+                transaction_date = datetime.now(timezone.utc)  # Użyj bieżącej daty w przypadku błędu
+
         else:
-            transaction_date = datetime.utcnow()
+            transaction_date = datetime.now(timezone.utc)  # Użyj bieżącej daty, jeśli nie podano
+            
 
         # Jeśli nazwa nie została podana, użyj domyślnej z słownika
         if not stock_name:
