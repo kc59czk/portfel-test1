@@ -215,6 +215,20 @@ def add_transaction():
         price_per_unit = float(request.form['price_per_unit'])
         transaction_type = request.form['transaction_type']
         
+                # Pobierz datę transakcji z formularza
+        transaction_date_str = request.form.get('transaction_date')
+        
+        # Konwertuj datę, jeśli została podana
+        if transaction_date_str:
+            try:
+                # Format: 'YYYY-MM-DDTHH:MM'
+                transaction_date = datetime.strptime(transaction_date_str, '%Y-%m-%dT%H:%M')
+            except ValueError:
+                flash('Nieprawidłowy format daty. Użyj bieżącej daty.', 'warning')
+                transaction_date = datetime.utcnow()
+        else:
+            transaction_date = datetime.utcnow()
+
         # Jeśli nazwa nie została podana, użyj domyślnej z słownika
         if not stock_name:
             stock_name = get_stock_name(stock_symbol)
@@ -243,6 +257,7 @@ def add_transaction():
             amount=amount,
             price_per_unit=price_per_unit,
             transaction_type=transaction_type
+            transaction_date=transaction_date  # Użyj wybranej daty
         )
         
         db.session.add(new_transaction)
