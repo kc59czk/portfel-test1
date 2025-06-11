@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime,timezone
 import requests
-import re
+import os
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'twoj_tajny_klucz'
@@ -19,6 +19,13 @@ class Transaction(db.Model):
     transaction_date = db.Column(db.DateTime, default=datetime.now(timezone.utc))  # data transakcji
     transaction_type = db.Column(db.String(10), nullable=False)  # 'buy' or 'sell'
 
+def get_app_version():
+    try:
+        with open('version.txt', 'r') as f:
+            return f.read().strip()
+    except FileNotFoundError:
+        return "dev"
+    
 def get_stock_price(symbol):
     symbol = symbol.upper()
     try:
@@ -151,7 +158,9 @@ def index():
                          total_value=total_value,
                          total_invested=total_invested,
                          total_profit_loss=total_profit_loss,
-                         transactions=transactions)
+                         transactions=transactions,
+                         app_version=get_app_version())
+
 @app.route('/charts')
 def charts():
     transactions = Transaction.query.all()
@@ -202,7 +211,9 @@ def charts():
 
     return render_template('charts.html', 
                           portfolio=portfolio,
-                          history=history)
+                          history=history,
+                          app_version=get_app_version())    
+
 
 #    return render_template('charts.html', portfolio=portfolio)
 
@@ -229,7 +240,7 @@ def add_transaction():
 
         else:
             transaction_date = datetime.now(timezone.utc)  # Użyj bieżącej daty, jeśli nie podano
-            
+
 
         # Jeśli nazwa nie została podana, użyj domyślnej z słownika
         if not stock_name:
@@ -269,7 +280,7 @@ def add_transaction():
         flash('Transakcja dodana pomyślnie!', 'success')
         return redirect(url_for('index'))
     
-    return render_template('add_transaction.html')
+    return render_template('add_transaction.html',app_version=get_app_version())
 
 @app.route('/delete_transaction/<int:id>')
 def delete_transaction(id):
