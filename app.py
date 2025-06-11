@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime,timezone
+from jinja2 import Environment
 import requests
 import os
 
@@ -9,6 +10,7 @@ app.config['SECRET_KEY'] = 'twoj_tajny_klucz'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
+app.jinja_env.globals.update(min=min)
 
 class Transaction(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -118,6 +120,7 @@ def index():
     portfolio = {}
     total_value = 0.0  # Zainicjuj jako float
     total_invested = 0.0  # Zainicjuj jako float
+    avg_buy_price=0.0
     
     for tx in transactions:
         if tx.stock_symbol not in portfolio:
@@ -168,6 +171,7 @@ def index():
                          total_invested=total_invested,
                          total_profit_loss=total_profit_loss,
                          transactions=transactions,
+                         avg_buy_price=avg_buy_price,
                          app_version=get_app_version())
 
 @app.route('/charts')
