@@ -1,13 +1,31 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, session, request, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime,timezone
 from jinja2 import Environment
+from functools import wraps
 from dotenv import load_dotenv
 load_dotenv()
 import requests
 import os
 
 app = Flask(__name__)
+
+
+def get_authenticated_user():
+    # Adjust header name if your proxy uses a different one
+    return request.headers.get('X-Forwarded-User') or request.headers.get('X-Email')
+
+@app.before_request
+def set_user():
+    # Allow unauthenticated access to static files if needed
+    if request.endpoint in ('static',):
+        return
+    user = get_authenticated_user()
+    if user:
+        session['user'] = user
+    else:
+        session.pop('user', None)
+
 
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'fallback_secret')
 app.config['SQLALCHEMY_DATABASE_URI'] = (
@@ -37,6 +55,15 @@ def get_app_version():
     except FileNotFoundError:
         return "dev"
     
+
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user' not in session:
+            return redirect(url_for('index'))  # or a custom login page/info
+        return f(*args, **kwargs)
+    return decorated_function
+
 def get_stock_price(symbol):
     symbol = symbol.upper()
     try:
@@ -124,6 +151,7 @@ def save_portfolio_history():
     db.session.commit()
 
 @app.route('/')
+@login_required
 def index():
     transactions = Transaction.query.all()
     portfolio = {}
@@ -181,13 +209,13 @@ def index():
                          total_profit_loss=total_profit_loss,
                          transactions=transactions,
                          avg_buy_price=avg_buy_price,
-                         app_version=get_app_version())
+                         app_version=get_app_version(),
+                         user=session.get('user', 'Gość'))
 
 @app.route('/charts')
 def charts():
     transactions = Transaction.query.all()
     portfolio = {}
-    # ... (taka sama logika obliczeń jak w index()) ...
     total_invested = 0.0
     total_value = 0.0  # Zainicjuj jako float
     
@@ -330,4 +358,5 @@ def update_prices():
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
-    app.run(debug=True)
+    app.run(debug=True,host='0.0.0.0', port=int(os.getenv('PORT', 5000)))
+    
