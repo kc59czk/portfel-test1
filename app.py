@@ -2,6 +2,7 @@ from flask import Flask, render_template, session, request, redirect, url_for, f
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime,timezone
 from jinja2 import Environment
+from flask_migrate import Migrate
 from functools import wraps
 from dotenv import load_dotenv
 load_dotenv()
@@ -37,10 +38,12 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 
 db = SQLAlchemy(app)
+migrate = Migrate(app, db)
 app.jinja_env.globals.update(min=min)
 
 class Transaction(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    user_email = db.Column(db.String(255), nullable=False) 
     stock_symbol = db.Column(db.String(10), nullable=False)  # np. CDR, PZU, PKO
     stock_name = db.Column(db.String(100))  # nazwa spółki
     amount = db.Column(db.Float, nullable=False)  # liczba akcji
@@ -107,13 +110,14 @@ def get_stock_name(symbol):
 # Dodaj nowy model
 class PortfolioHistory(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    user_email = db.Column(db.String(255), nullable=False)
     date = db.Column(db.DateTime, default=datetime.now(timezone.utc))
     total_value = db.Column(db.Float)
     total_invested = db.Column(db.Float)
 
 # Funkcja do zapisywania historii portfela
 def save_portfolio_history():
-    transactions = Transaction.query.all()
+    transactions = Transaction.query.filter_by(user_email=session['user']).all()
     portfolio = {}
     total_value = 0.0
     total_invested = 0.0
@@ -145,7 +149,8 @@ def save_portfolio_history():
     # Zapisz do historii
     history = PortfolioHistory(
         total_value=total_value,
-        total_invested=total_invested
+        total_invested=total_invested,
+        user_email=session['user']
     )
     db.session.add(history)
     db.session.commit()
@@ -153,7 +158,7 @@ def save_portfolio_history():
 @app.route('/')
 @login_required
 def index():
-    transactions = Transaction.query.all()
+    transactions = Transaction.query.filter_by(user_email=session['user']).all()
     portfolio = {}
     total_value = 0.0  # Zainicjuj jako float
     total_invested = 0.0  # Zainicjuj jako float
@@ -213,8 +218,9 @@ def index():
                          user=session.get('user', 'Gość'))
 
 @app.route('/charts')
+@login_required
 def charts():
-    transactions = Transaction.query.all()
+    transactions = Transaction.query.filter_by(user_email=session['user']).all()
     portfolio = {}
     total_invested = 0.0
     total_value = 0.0  # Zainicjuj jako float
@@ -249,8 +255,7 @@ def charts():
               portfolio[stock]['profit_loss'] = None
     
     total_profit_loss = total_value - total_invested if total_invested > 0 else 0
-    history_records = PortfolioHistory.query.order_by(PortfolioHistory.date).all()
- 
+    history_records = PortfolioHistory.query.filter_by(user_email=session['user']).order_by(PortfolioHistory.date).all()
     history = []
     for record in history_records:
         history.append({
@@ -262,7 +267,8 @@ def charts():
     return render_template('charts.html', 
                           portfolio=portfolio,
                           history=history,
-                          app_version=get_app_version())    
+                          app_version=get_app_version(),
+                          user=session.get('user'))    
 
 
 #    return render_template('charts.html', portfolio=portfolio)
@@ -315,6 +321,7 @@ def add_transaction():
                 return redirect(url_for('add_transaction'))
         
         new_transaction = Transaction(
+            user_email=session['user'],
             stock_symbol=stock_symbol,
             stock_name=stock_name,
             amount=amount,
@@ -330,21 +337,27 @@ def add_transaction():
         flash('Transakcja dodana pomyślnie!', 'success')
         return redirect(url_for('index'))
     
-    return render_template('add_transaction.html',app_version=get_app_version())
+    return render_template('add_transaction.html',app_version=get_app_version(),user=session.get('user'))
 
 @app.route('/delete_transaction/<int:id>')
 def delete_transaction(id):
-    transaction = Transaction.query.get_or_404(id)
+    transaction = Transaction.query.filter_by(id=id, user_email=session['user']).first_or_404()
     db.session.delete(transaction)
     db.session.commit()
     save_portfolio_history() 
     flash('Transakcja usunięta pomyślnie!', 'success')
     return redirect(url_for('index'))
 
+@app.route('/logout')
+def logout():
+    session.pop('user', None)
+    flash('Zostałeś wylogowany.', 'success')
+    return redirect("http://wl.htopowy.pl/oauth2/sign_out") 
+
 @app.route('/update_prices')
 def update_prices():
     # Pobierz unikalne symbole z portfela
-    transactions = Transaction.query.all()
+    transactions = Transaction.query.filter_by(user_email=session['user']).all()
     symbols = list(set([tx.stock_symbol for tx in transactions]))
     
     # Pobierz aktualne ceny dla każdego symbolu
