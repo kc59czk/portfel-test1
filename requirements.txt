@@ -28,3 +28,5 @@ typing_extensions
 tzdata
 urllib3
 Werkzeug
+python-dotenv
+psycopg2-binary

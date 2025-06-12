@@ -2,13 +2,22 @@ from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime,timezone
 from jinja2 import Environment
+from dotenv import load_dotenv
+load_dotenv()
 import requests
 import os
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'twoj_tajny_klucz'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
+
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'fallback_secret')
+app.config['SQLALCHEMY_DATABASE_URI'] = (
+    f"postgresql+psycopg2://{os.getenv('DB_USER')}:{os.getenv('DB_PASSWORD')}"
+    f"@{os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/{os.getenv('DB_NAME')}"
+)
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+# Inicjalizacja bazy danych
+
+
 db = SQLAlchemy(app)
 app.jinja_env.globals.update(min=min)
 
