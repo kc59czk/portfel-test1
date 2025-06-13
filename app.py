@@ -115,7 +115,7 @@ class PortfolioHistory(db.Model):
     total_value = db.Column(db.Float)
     total_invested = db.Column(db.Float)
 
-# Funkcja do zapisywania historii portfela
+# Funkcja do zapisywania historii portfela"""  """
 def save_portfolio_history():
     transactions = Transaction.query.filter_by(user_email=session['user']).all()
     portfolio = {}
@@ -154,6 +154,7 @@ def save_portfolio_history():
     )
     db.session.add(history)
     db.session.commit()
+
 
 @app.route('/')
 @login_required
@@ -217,6 +218,8 @@ def index():
                          app_version=get_app_version(),
                          user=session.get('user', 'Gość'))
 
+
+
 @app.route('/charts')
 @login_required
 def charts():
@@ -269,9 +272,6 @@ def charts():
                           history=history,
                           app_version=get_app_version(),
                           user=session.get('user'))    
-
-
-#    return render_template('charts.html', portfolio=portfolio)
 
 @app.route('/add_transaction', methods=['GET', 'POST'])
 def add_transaction():
